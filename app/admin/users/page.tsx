@@ -274,7 +274,7 @@ export default function UserManagementPage() {
                   value={formData.role}
                   onChange={(e) => setFormData({...formData, role: e.target.value})}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 outline-none focus:border-antko-primary bg-white"
-                  disabled={editingUser?.role === 'admin_general'}
+                  disabled={profile?.role !== 'admin_general'}
                 >
                   <option value="comercial">Comercial</option>
                   <option value="compras">Compras</option>
@@ -290,7 +290,7 @@ export default function UserManagementPage() {
                   <option value="logistica">Logística</option>
                   <option value="reportes">Reportes</option>
                   <option value="admin">Administrador</option>
-                  {profile?.role === 'admin_general' && !editingUser && (
+                  {profile?.role === 'admin_general' && (
                     <option value="admin_general">Administrador General</option>
                   )}
                 </select>

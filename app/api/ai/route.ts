@@ -83,10 +83,10 @@ export async function POST(req: Request) {
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    console.log('Using AI_MODEL:', AI_MODEL);
+    console.log('Using AI_MODEL:', AI_MODEL, 'with API v1');
     
-    // Attempt to list models to see what's available if it fails
-    const model = genAI.getGenerativeModel({ model: AI_MODEL });
+    // Explicitly use v1 instead of v1beta which seems to be giving 404 for this key
+    const model = genAI.getGenerativeModel({ model: AI_MODEL }, { apiVersion: 'v1' });
 
     const result = await model.generateContent({
       contents: [
@@ -119,10 +119,9 @@ export async function POST(req: Request) {
   } catch (error: any) {
     console.error('Gemini API Error details:', error);
     
-    // Debug: Try to list models if 404
+    // Detailed error logging
     if (error.status === 404 || error.message?.includes('Not Found')) {
-      console.warn('Model 404. Please check if the model name is correct for your region/key.');
-      console.log('Common models include: gemini-1.5-flash, gemini-1.5-flash-8b, gemini-1.5-pro');
+      console.warn('CRITICAL: Gemini model 404. This often means the API Key does not have access to the model or the region is restricted.');
     }
 
     const errorMessage = error.message || 'Failed to process document';

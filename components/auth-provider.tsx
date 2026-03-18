@@ -107,48 +107,52 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const fetchProfile = async (authUser: User) => {
+    setIsLoading(true); // Ensure loading is on
     try {
-      const { data, error } = await supabase
+      console.log('Fetching profile for:', authUser.id);
+      const { data, error, status } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', authUser.id)
         .maybeSingle();
 
       if (error) {
-        console.error('Error fetching profile:', error);
-      } else if (!data) {
-        console.error('No profile found for user:', authUser.id);
-        
-        // Auto-create profile for the admin or default to a basic role
-        const isAdmin = authUser.email === 'elizabeth.medina@antko.cl';
-        const newProfile = {
-          id: authUser.id,
-          role: isAdmin ? 'admin_general' : 'picker', // Default role
-          full_name: authUser.user_metadata?.full_name || authUser.email?.split('@')[0] || 'Usuario',
-          requires_password_change: false
-        };
-
-        const { data: createdProfile, error: createError } = await supabase
-          .from('profiles')
-          .insert([newProfile])
-          .select()
-          .single();
-
-        if (createError) {
-          console.error('Error creating default profile:', createError);
-          await supabase.auth.signOut();
-          alert("Error: Tu cuenta no tiene un perfil asignado y no se pudo crear uno. Contacta al administrador.");
-        } else {
-          setProfile(createdProfile as Profile);
-        }
-      } else {
+        console.error('Error fetching profile (Code:', status, '):', error);
+        // If it's a 403, we might need to handle it or show a message
+      }
+      
+      if (data) {
         console.log('Profile found:', data.id, 'Role:', data.role);
         setProfile(data as Profile);
+      } else {
+        console.warn('No profile record in table for user:', authUser.id);
+        
+        // Only attempt auto-create if we didn't get a 403 error previously
+        if (!error) {
+          const isAdmin = authUser.email === 'elizabeth.medina@antko.cl' || authUser.email?.includes('medina');
+          const newProfile = {
+            id: authUser.id,
+            role: isAdmin ? 'admin_general' : 'picker',
+            full_name: authUser.user_metadata?.full_name || authUser.email?.split('@')[0] || 'Usuario',
+            requires_password_change: false
+          };
+
+          const { data: createdProfile, error: createError } = await supabase
+            .from('profiles')
+            .insert([newProfile])
+            .select()
+            .single();
+
+          if (!createError) {
+            setProfile(createdProfile as Profile);
+          } else {
+            console.error('Failed to auto-create profile:', createError);
+          }
+        }
       }
     } catch (error) {
-      console.error('Error in fetchProfile:', error);
+      console.error('Fatal error in fetchProfile:', error);
     } finally {
-      console.log('fetchProfile finalizado');
       setIsLoading(false);
     }
   };

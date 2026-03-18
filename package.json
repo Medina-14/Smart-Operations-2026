@@ -4,7 +4,13 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build && cp -r public .next/standalone/ && cp -r .next/static .next/standalone/.next/",
+    "build": "next build && (if [ -d public ]; then cp -r public .next/standalone/; fi) && (if [ -d .next/static ]; then cp -r .next/static .next/standalone/.next/; fi)",
+    "start": "next start",
+    "lint": "eslint .",
+    "clean": "next clean"
+  },
+    "dev": "next dev",
+"build": "next build && (if [ -d public ]; then cp -r public .next/standalone/; fi) && (if [ -d .next/static ]; then cp -r .next/static .next/standalone/.next/; fi)",
     "start": "next start",
     "lint": "eslint .",
     "clean": "next clean"

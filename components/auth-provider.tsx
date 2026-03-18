@@ -147,11 +147,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error('Error in fetchProfile:', error);
     } finally {
+      console.log('fetchProfile finalizado');
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
+    console.log('AuthProvider State - isLoading:', isLoading, 'user:', user?.email, 'pathname:', pathname);
     if (!isLoading) {
       if (!user && pathname !== '/login') {
         router.push('/login');

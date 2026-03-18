@@ -34,7 +34,7 @@ export async function fetchNVs(): Promise<NVData[]> {
     return [];
   }
 
-  return data.map((nv: any) => ({
+  return (data || []).map((nv: any) => ({
     id: nv.id,
     nv_number: nv.nv_number,
     client_name: nv.client_name,
@@ -173,7 +173,7 @@ export async function fetchStandbyItems(): Promise<StandbyItemData[]> {
     return [];
   }
 
-  return data.map((item: any) => ({
+  return (data || []).map((item: any) => ({
     id: item.id,
     nv_item_id: item.nv_item_id,
     nv_number: item.nv_items?.nvs?.nv_number || 'N/A',
@@ -300,7 +300,7 @@ export async function fetchManagedOCs(): Promise<ManagedOCData[]> {
     return [];
   }
 
-  return data.map((oc: any) => ({
+  return (data || []).map((oc: any) => ({
     id: oc.id,
     ocNumber: oc.oc_number,
     status: oc.status as 'gestionado' | 'recepcionado',
@@ -392,7 +392,7 @@ export async function fetchPackingNVs(): Promise<NVData[]> {
     return [];
   }
 
-  return data.map((nv: any) => ({
+  return (data || []).map((nv: any) => ({
     id: nv.id,
     nv_number: nv.nv_number,
     client_name: nv.client_name,
@@ -466,6 +466,20 @@ export async function createPackageRecord(nvId: string, packageNumber: number, i
   }
 
   return true;
+}
+
+export async function fetchPackagesForNV(nvId: string): Promise<any[]> {
+  const { data, error } = await supabase
+    .from('packages')
+    .select('*')
+    .eq('nv_id', nvId)
+    .order('package_number', { ascending: true });
+    
+  if (error) {
+    console.error('Error fetching packages:', error);
+    return [];
+  }
+  return data || [];
 }
 
 export async function sendNVToSupervisorPacking(nvId: string, route: string): Promise<boolean> {
@@ -824,4 +838,43 @@ export async function closeRouteAndUpdateMileage(routeId: string, vehicleId: str
   }
   
   return true;
+}
+
+export async function fetchActiveRoutes(): Promise<any[]> {
+  const { data, error } = await supabase
+    .from('routes')
+    .select(`
+      id,
+      driver_id,
+      vehicle_id,
+      status,
+      profiles ( full_name ),
+      route_documents (
+        id,
+        nv_id,
+        status,
+        guide_number,
+        nvs ( nv_number )
+      )
+    `)
+    .neq('status', 'completed')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching active routes:', error);
+    return [];
+  }
+
+  return (data || []).map((route: any) => ({
+    id: route.id,
+    driver: route.profiles?.full_name || 'Sin asignar',
+    status: route.status,
+    items: route.route_documents?.map((doc: any) => ({
+      id: doc.nvs?.nv_number || doc.nv_id,
+      realId: doc.id,
+      type: 'NV',
+      guide: doc.guide_number || 'N/A',
+      status: doc.status
+    })) || []
+  }));
 }

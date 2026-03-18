@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { CameraScanner } from '@/components/ui/camera-scanner';
 import { PackageCheck, CheckCircle2, AlertTriangle, Truck, ChevronDown, ChevronRight, Box, Archive, Camera } from 'lucide-react';
-import { fetchReceivingItems, confirmReceivingItem } from '@/lib/api';
+import { fetchReceivingItems, confirmReceivingItem, fetchPackingNVs, fetchPackagesForNV, fetchActiveRoutes } from '@/lib/api';
 
 export default function SupervisorPackingPage() {
   const [activeTab, setActiveTab] = useState<'receiving' | 'labels' | 'dispatch'>('receiving');
@@ -14,33 +14,59 @@ export default function SupervisorPackingPage() {
   // Data for receiving
   const [receivingItems, setReceivingItems] = useState<any[]>([]);
 
-  // Mock data for label validation
+  // Real data for label validation
   const [expandedNv, setExpandedNv] = useState<string | null>(null);
   const [activeCameraNv, setActiveCameraNv] = useState<string | null>(null);
-  const mockNvsForLabels = [
-    { id: 'NV-4587', client: 'Acme Corp', packages: ['NV-4587-1', 'NV-4587-2'] },
-    { id: 'NV-4588', client: 'Global Industries', packages: ['NV-4588-1'] }
-  ];
+  const [packingNvs, setPackingNvs] = useState<any[]>([]);
+  const [nvPackages, setNvPackages] = useState<Record<string, any[]>>({});
 
-  // Mock data for dispatch
+  // Real data for dispatch
   const [expandedRoute, setExpandedRoute] = useState<string | null>(null);
   const [activeCameraRoute, setActiveCameraRoute] = useState<string | null>(null);
-  const mockRoutes = [
-    { 
-      id: 'RT-1024', 
-      driver: 'Juan Pérez', 
-      items: [
-        { id: 'NV-4587', guide: 'GD-1001', packageCount: 2, type: 'NV' },
-        { id: 'NV-4588', guide: 'GD-1002', packageCount: 1, type: 'NV' },
-        { id: 'OC-9988', guide: 'N/A', packageCount: 3, type: 'OC' },
-        { id: 'PH-4587-1234', guide: 'N/A', packageCount: 1, type: 'Bodega PH' }
-      ] 
-    }
-  ];
+  const [activeRoutes, setActiveRoutes] = useState<any[]>([]);
 
   useEffect(() => {
-    loadReceivingItems();
-  }, []);
+    if (activeTab === 'receiving') loadReceivingItems();
+    if (activeTab === 'labels') loadPackingData();
+    if (activeTab === 'dispatch') loadRoutesData();
+  }, [activeTab]);
+
+  const loadPackingData = async () => {
+    setIsLoading(true);
+    try {
+      const data = await fetchPackingNVs();
+      setPackingNvs(data);
+    } catch (error) {
+      console.error('Error loading packing NVs:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loadRoutesData = async () => {
+    setIsLoading(true);
+    try {
+      const data = await fetchActiveRoutes();
+      setActiveRoutes(data);
+    } catch (error) {
+      console.error('Error loading active routes:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const toggleNvExpansion = async (nvId: string) => {
+    if (expandedNv === nvId) {
+      setExpandedNv(null);
+      return;
+    }
+    
+    setExpandedNv(nvId);
+    if (!nvPackages[nvId]) {
+      const packages = await fetchPackagesForNV(nvId);
+      setNvPackages(prev => ({ ...prev, [nvId]: packages }));
+    }
+  };
 
   const loadReceivingItems = async () => {
     setIsLoading(true);
@@ -235,19 +261,19 @@ export default function SupervisorPackingPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-antko-dark mb-2">Notas de Venta (Bultos)</h3>
-              {mockNvsForLabels.map(nv => (
+              {packingNvs.map(nv => (
                 <div key={nv.id} className="border rounded-lg overflow-hidden bg-white shadow-sm">
                   <div 
                     className="p-4 bg-gray-50 flex justify-between items-center cursor-pointer hover:bg-gray-100"
-                    onClick={() => setExpandedNv(expandedNv === nv.id ? null : nv.id)}
+                    onClick={() => toggleNvExpansion(nv.id)}
                   >
                     <div className="flex items-center gap-2">
                       {expandedNv === nv.id ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-                      <span className="font-medium">{nv.id}</span>
-                      <span className="text-sm text-gray-500">- {nv.client}</span>
+                      <span className="font-medium">{nv.nv_number}</span>
+                      <span className="text-sm text-gray-500">- {nv.client_name}</span>
                     </div>
                     <div className="text-sm font-medium bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                      {nv.packages.length} Bultos
+                      {nvPackages[nv.id]?.length || '?'} Bultos
                     </div>
                   </div>
                   {expandedNv === nv.id && (
@@ -270,13 +296,14 @@ export default function SupervisorPackingPage() {
                       )}
 
                       <ul className="space-y-2">
-                        {nv.packages.map(pkg => {
-                          const isValidated = scannedLabels.includes(pkg);
+                        {(nvPackages[nv.id] || []).map(pkg => {
+                          const labelCode = `${nv.nv_number}-${pkg.package_number}`;
+                          const isValidated = scannedLabels.includes(labelCode);
                           return (
-                            <li key={pkg} className="flex items-center justify-between p-2 bg-gray-50 rounded border border-gray-100">
+                            <li key={pkg.id} className="flex items-center justify-between p-2 bg-gray-50 rounded border border-gray-100">
                               <div className="flex items-center gap-2">
                                 <Box className="w-4 h-4 text-gray-400" />
-                                <span className="font-mono text-sm">{pkg}</span>
+                                <span className="font-mono text-sm">{labelCode}</span>
                               </div>
                               {isValidated ? (
                                 <span className="flex items-center gap-1 text-xs font-medium text-green-600 bg-green-100 px-2 py-1 rounded">
@@ -324,17 +351,17 @@ export default function SupervisorPackingPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-antko-dark mb-2">Rutas de Logística</h3>
-              {mockRoutes.map(route => (
+              {activeRoutes.map(route => (
                 <div key={route.id} className="border rounded-lg overflow-hidden bg-white shadow-sm">
                   <div 
                     className="p-4 bg-gray-50 flex justify-between items-center cursor-pointer hover:bg-gray-100"
-                    onClick={() => {
-                      setExpandedRoute(expandedRoute === route.id ? null : route.id);
-                      if (expandedRoute !== route.id) {
-                        const hasNV = route.items.some(item => item.type === 'NV');
-                        setDispatchValidated(!hasNV);
-                      }
-                    }}
+                      onClick={() => {
+                        setExpandedRoute(expandedRoute === route.id ? null : route.id);
+                        if (expandedRoute !== route.id) {
+                          const hasNV = route.items.some((item: any) => item.type === 'NV');
+                          setDispatchValidated(!hasNV);
+                        }
+                      }}
                   >
                     <div className="flex items-center gap-2">
                       {expandedRoute === route.id ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
@@ -348,7 +375,7 @@ export default function SupervisorPackingPage() {
                     <div className="p-4 border-t border-gray-100 space-y-4">
                       <div className="flex justify-between items-center">
                         <h4 className="text-sm font-semibold text-gray-700">Detalle de Ruta</h4>
-                        {route.items.some(item => item.type === 'NV') ? (
+                        {route.items.some((item: any) => item.type === 'NV') ? (
                           <button 
                             onClick={() => setActiveCameraRoute(activeCameraRoute === route.id ? null : route.id)}
                             className="flex items-center gap-2 bg-antko-dark text-white px-3 py-1.5 rounded-lg hover:bg-antko-darker transition-colors text-xs font-medium"
@@ -380,7 +407,7 @@ export default function SupervisorPackingPage() {
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
-                          {route.items.map(item => (
+                          {route.items.map((item: any) => (
                             <tr key={item.id} className={item.type !== 'NV' ? 'bg-gray-50/50' : ''}>
                               <td className="px-3 py-2 font-medium">{item.id}</td>
                               <td className="px-3 py-2 text-gray-600">
@@ -393,10 +420,12 @@ export default function SupervisorPackingPage() {
                                 </span>
                               </td>
                               <td className="px-3 py-2 text-gray-600">{item.guide}</td>
-                              <td className="px-3 py-2 text-center font-medium">{item.packageCount}</td>
+                              <td className="px-3 py-2 text-center font-medium">Validado</td>
                               <td className="px-3 py-2 text-center">
                                 {item.type === 'NV' ? (
-                                  <span className="text-xs font-bold text-amber-600 bg-amber-50 px-2 py-1 rounded">Requerida</span>
+                                  <span className={`text-xs font-bold px-2 py-1 rounded ${item.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-amber-50 text-amber-600'}`}>
+                                    {item.status === 'completed' ? 'Validado' : 'Pendiente'}
+                                  </span>
                                 ) : (
                                   <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded">No Requerida</span>
                                 )}

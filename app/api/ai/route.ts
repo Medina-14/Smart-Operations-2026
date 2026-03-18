@@ -43,8 +43,45 @@ export async function POST(req: Request) {
         "label_visible": boolean,
         "label_number": "string"
       }`;
+    } else if (promptType === 'ocr_purchase_order') {
+      prompt = `Extract the following information from this Purchase Order (Orden de Compra - OC) image/document:
+      1. OC Number (Número de OC)
+      2. List of items (SKU, Description, Quantity)
+      
+      Return the result strictly as a JSON object with the following structure:
+      {
+        "oc_number": "string",
+        "items": [
+          { "sku": "string", "description": "string", "quantity": number }
+        ]
+      }`;
+    } else if (promptType === 'ocr_nv') {
+      prompt = `Extract information from this Sales Note (Nota de Venta - NV) or sales document:
+      1. Document number (nv_number)
+      2. Client name (client_name)
+      3. List of items (SKU, Description, Quantity)
+      
+      If you can't find a SKU, generate a simple one based on the name.
+      Return the result strictly as a JSON object with the following structure:
+      {
+        "nv_number": "string",
+        "client_name": "string",
+        "items": [
+          { "sku": "string", "description": "string", "requested_qty": number }
+        ]
+      }`;
     } else {
       return NextResponse.json({ error: 'Invalid prompt type' }, { status: 400 });
+    }
+
+    // Determine mimeType from base64 if possible
+    let mimeType = 'image/jpeg';
+    if (imageBase64.includes('application/pdf')) {
+      mimeType = 'application/pdf';
+    } else if (imageBase64.includes('image/png')) {
+      mimeType = 'image/png';
+    } else if (imageBase64.includes('image/webp')) {
+      mimeType = 'image/webp';
     }
 
     const response = await ai.models.generateContent({
@@ -55,7 +92,7 @@ export async function POST(req: Request) {
             { text: prompt },
             {
               inlineData: {
-                mimeType: 'image/jpeg',
+                mimeType: mimeType,
                 data: imageBase64.split(',')[1] || imageBase64,
               },
             },

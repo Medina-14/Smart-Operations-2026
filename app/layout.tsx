@@ -7,6 +7,9 @@ import { AuthProvider } from '@/components/auth-provider';
 export const metadata: Metadata = {
   title: 'Smart Operations – ANTKO Group',
   description: 'Plataforma de operaciones logísticas y de almacén',
+  icons: {
+    icon: '/favicon.png',
+  },
 };
 
 export default function RootLayout({children}: {children: React.ReactNode}) {

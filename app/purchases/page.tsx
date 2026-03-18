@@ -55,32 +55,60 @@ export default function PurchasesPage() {
       return;
     }
 
-    if (e.target.files && e.target.files.length > 0) {
-      setIsUploading(true);
-      setError(null);
-      setSuccess(null);
-      
-      // Simulate AI validation delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Randomly simulate success or mismatch (80% success rate for better UX)
-      if (Math.random() > 0.2) {
-        const ocNumber = `OC-${Math.floor(Math.random() * 10000)}`;
-        const itemsToMove = pendingItems.filter(i => selectedItemIds.includes(i.id));
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    setError(null);
+    setSuccess(null);
+    
+    try {
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64 = reader.result as string;
         
-        const success = await createPurchaseOrder(ocNumber, itemsToMove);
-        
-        if (success) {
-          setSuccess(`OC ${ocNumber} validada y creada correctamente. Los productos han sido movidos a "Gestionado".`);
-          setSelectedItemIds([]);
-          await loadData();
-          setActiveTab('gestionado');
-        } else {
-          setError('Error al crear la Orden de Compra en la base de datos.');
+        try {
+          const response = await fetch('/api/ai', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              imageBase64: base64,
+              promptType: 'ocr_purchase_order'
+            })
+          });
+          
+          const result = await response.json();
+          
+          if (result.error) {
+            setError('Error al procesar la OC con IA: ' + result.error);
+            setIsUploading(false);
+            return;
+          }
+
+          const ocNumber = result.oc_number || `OC-${Math.floor(Math.random() * 10000)}`;
+          const itemsToMove = pendingItems.filter(i => selectedItemIds.includes(i.id));
+          
+          const success = await createPurchaseOrder(ocNumber, itemsToMove);
+          
+          if (success) {
+            setSuccess(`OC ${ocNumber} validada por IA y creada correctamente. Los productos han sido movidos a "Gestionado".`);
+            setSelectedItemIds([]);
+            await loadData();
+            setActiveTab('gestionado');
+          } else {
+            setError('Error al crear la Orden de Compra en la base de datos.');
+          }
+        } catch (err) {
+          console.error('AI Processing Error:', err);
+          setError('Hubo un error al conectar con el servicio de IA.');
+        } finally {
+          setIsUploading(false);
         }
-      } else {
-        setError('La IA detectó una discrepancia: Los productos de la OC no coinciden con los seleccionados. Por favor revise el documento.');
-      }
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      console.error('File reading error:', err);
+      setError('Error al leer el archivo.');
       setIsUploading(false);
     }
   };

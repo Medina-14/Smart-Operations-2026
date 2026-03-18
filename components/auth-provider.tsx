@@ -142,6 +142,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setProfile(createdProfile as Profile);
         }
       } else {
+        console.log('Profile found:', data.id, 'Role:', data.role);
         setProfile(data as Profile);
       }
     } catch (error) {
@@ -159,8 +160,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         router.push('/login');
       } else if (user && profile) {
         // Direct access to dashboard, ignoring requires_password_change
-        if (pathname === '/login' || pathname === '/change-password') {
-          router.push(getDashboardPath(profile.role));
+        if (pathname === '/login' || pathname === '/change-password' || pathname === '/') {
+          const dashboard = getDashboardPath(profile.role);
+          console.log('Redirecting to dashboard:', dashboard);
+          router.push(dashboard);
         }
       }
     }

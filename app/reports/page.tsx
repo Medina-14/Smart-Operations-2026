@@ -40,6 +40,25 @@ export default function ReportsPage() {
     }
   };
 
+  const handleDownload = async () => {
+    try {
+      const response = await fetch('/api/export?table=nvs');
+      if (!response.ok) throw new Error('Failed to download');
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `reporte_operaciones_${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Download error:', error);
+      alert('Error al descargar el reporte.');
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
@@ -64,7 +83,11 @@ export default function ReportsPage() {
               <h2 className="text-xl font-bold">Resumen Diario de Operaciones</h2>
               <p className="text-gray-400 text-sm mt-1">{report.date}</p>
             </div>
-            <button className="text-gray-300 hover:text-white transition-colors">
+            <button 
+              onClick={handleDownload}
+              className="text-gray-300 hover:text-white transition-colors p-2 rounded-lg hover:bg-white/10"
+              title="Descargar datos en CSV"
+            >
               <Download className="w-5 h-5" />
             </button>
           </div>

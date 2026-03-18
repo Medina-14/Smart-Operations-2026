@@ -71,7 +71,7 @@ export function Sidebar() {
         <div className="mb-4 px-4">
           <p className="text-xs text-gray-400 uppercase tracking-wider">Usuario Actual</p>
           <p className="text-sm font-medium truncate">{profile?.full_name}</p>
-          <p className="text-xs text-antko-primary capitalize">{profile?.role.replace('_', ' ')}</p>
+          <p className="text-xs text-antko-primary capitalize">{profile?.role?.replace('_', ' ')}</p>
         </div>
         <button 
           onClick={signOut}

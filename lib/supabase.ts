@@ -13,6 +13,6 @@ if (supabaseUrl && !supabaseUrl.startsWith('http')) {
   supabaseUrl = `https://${supabaseUrl}`;
 }
 
-console.log('Supabase Client: Initializing with URL:', supabaseUrl.startsWith('https://odxp') ? 'Set' : 'Placeholder');
+console.log('Supabase Client: Initializing with URL:', supabaseUrl.startsWith('https://vglc') ? 'Set' : 'Placeholder');
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);

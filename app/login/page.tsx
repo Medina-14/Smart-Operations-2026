@@ -22,18 +22,22 @@ export default function LoginPage() {
       // Supabase requires an email format internally. 
       // We append a default domain so the user only has to type their username.
       const loginEmail = username.includes('@') ? username : `${username}@antko.cl`;
+      console.log('Intentando iniciar sesión con:', loginEmail);
 
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email: loginEmail,
         password,
       });
 
       if (error) {
+        console.error('Error de Supabase Auth:', error);
         throw error;
       }
 
+      console.log('Inicio de sesión exitoso:', data);
       // AuthProvider will handle the redirect based on profile
     } catch (err: any) {
+      console.error('Error capturado en handleLogin:', err);
       setError('Error al iniciar sesión. Verifica tu usuario y contraseña.');
     } finally {
       setIsLoading(false);
@@ -73,7 +77,7 @@ export default function LoginPage() {
             )}
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label htmlFor="username" className="block text-sm font-medium text-gray-700">
                 Nombre de Usuario
               </label>
               <div className="mt-1 relative rounded-md shadow-sm">
@@ -81,6 +85,8 @@ export default function LoginPage() {
                   <User className="h-5 w-5 text-gray-400" />
                 </div>
                 <input
+                  id="username"
+                  name="username"
                   type="text"
                   required
                   value={username}
@@ -92,7 +98,7 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                 Contraseña
               </label>
               <div className="mt-1 relative rounded-md shadow-sm">
@@ -100,6 +106,8 @@ export default function LoginPage() {
                   <Lock className="h-5 w-5 text-gray-400" />
                 </div>
                 <input
+                  id="password"
+                  name="password"
                   type="password"
                   required
                   value={password}

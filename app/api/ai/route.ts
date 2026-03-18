@@ -83,10 +83,10 @@ export async function POST(req: Request) {
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    console.log('Using AI_MODEL:', AI_MODEL, 'with API v1');
+    console.log('Using AI_MODEL:', AI_MODEL, 'with API v1beta');
     
-    // Explicitly use v1 instead of v1beta
-    const model = genAI.getGenerativeModel({ model: AI_MODEL }, { apiVersion: 'v1' });
+    // Switch to v1beta for gemini-flash-latest compatibility
+    const model = genAI.getGenerativeModel({ model: AI_MODEL }, { apiVersion: 'v1beta' });
 
     const result = await model.generateContent([
       promptText,

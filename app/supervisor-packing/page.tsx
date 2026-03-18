@@ -4,12 +4,15 @@ import { useState, useEffect } from 'react';
 import { CameraScanner } from '@/components/ui/camera-scanner';
 import { PackageCheck, CheckCircle2, AlertTriangle, Truck, ChevronDown, ChevronRight, Box, Archive, Camera } from 'lucide-react';
 import { fetchReceivingItems, confirmReceivingItem, fetchPackingNVs, fetchPackagesForNV, fetchActiveRoutes } from '@/lib/api';
+import { useAuth } from '@/components/auth-provider';
 
 export default function SupervisorPackingPage() {
   const [activeTab, setActiveTab] = useState<'receiving' | 'labels' | 'dispatch'>('receiving');
   const [scannedLabels, setScannedLabels] = useState<string[]>([]);
   const [dispatchValidated, setDispatchValidated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const { profile } = useAuth();
+  const isViewOnly = profile?.role === 'admin';
   
   // Data for receiving
   const [receivingItems, setReceivingItems] = useState<any[]>([]);
@@ -229,7 +232,8 @@ export default function SupervisorPackingPage() {
                           <td className="px-4 py-3">
                             <button 
                               onClick={() => handleConfirmItem(item.id, item.realId, item.type)}
-                              className="text-antko-primary hover:underline font-medium"
+                              disabled={isViewOnly}
+                              className={`font-medium ${isViewOnly ? 'text-gray-400 cursor-not-allowed' : 'text-antko-primary hover:underline'}`}
                             >
                               Confirmar
                             </button>
@@ -243,7 +247,7 @@ export default function SupervisorPackingPage() {
                       onClick={handleConfirmAll}
                       disabled={receivingItems.length === 0}
                       className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                        receivingItems.length > 0 
+                        receivingItems.length > 0 && !isViewOnly
                           ? 'bg-antko-primary text-white hover:bg-antko-primary/90' 
                           : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                       }`}

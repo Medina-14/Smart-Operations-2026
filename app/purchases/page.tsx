@@ -10,6 +10,7 @@ type TabType = 'pendientes' | 'gestionado' | 'validar';
 export default function PurchasesPage() {
   const { profile } = useAuth();
   const isComercial = profile?.role === 'comercial';
+  const isViewOnly = profile?.role === 'admin';
 
   const [activeTab, setActiveTab] = useState<TabType>('pendientes');
   const [isUploading, setIsUploading] = useState(false);
@@ -210,7 +211,7 @@ export default function PurchasesPage() {
             <div className="p-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
               <h2 className="font-semibold text-antko-dark">Productos Pendientes de Compra</h2>
               <label className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
-                selectedItemIds.length > 0 && !isUploading && !isComercial
+                selectedItemIds.length > 0 && !isUploading && !isComercial && !isViewOnly
                   ? 'bg-antko-secondary text-white cursor-pointer hover:bg-antko-secondary/90' 
                   : 'bg-gray-200 text-gray-400 cursor-not-allowed'
               }`}>
@@ -221,7 +222,7 @@ export default function PurchasesPage() {
                   accept=".pdf" 
                   className="hidden" 
                   onChange={handleUploadOC} 
-                  disabled={selectedItemIds.length === 0 || isUploading || isComercial} 
+                  disabled={selectedItemIds.length === 0 || isUploading || isComercial || isViewOnly} 
                 />
               </label>
             </div>
@@ -234,7 +235,7 @@ export default function PurchasesPage() {
                         type="checkbox" 
                         className="rounded border-gray-300 text-antko-primary focus:ring-antko-primary"
                         checked={pendingItems.length > 0 && selectedItemIds.length === pendingItems.length}
-                        disabled={isComercial}
+                        disabled={isComercial || isViewOnly}
                         onChange={(e) => {
                           if (e.target.checked) {
                             setSelectedItemIds(pendingItems.map(i => i.id));

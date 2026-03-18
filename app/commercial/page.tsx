@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Upload, FileText, X } from 'lucide-react';
 import { NVCard, NVData } from '@/components/ui/nv-card';
 import { fetchNVs, createNV } from '@/lib/api';
+import { useAuth } from '@/components/auth-provider';
 
 export default function CommercialPage() {
   const [nvs, setNvs] = useState<NVData[]>([]);
@@ -11,6 +12,8 @@ export default function CommercialPage() {
   const [showModal, setShowModal] = useState(false);
   const [pendingNV, setPendingNV] = useState<NVData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const { profile } = useAuth();
+  const isViewOnly = profile?.role === 'admin';
 
   useEffect(() => {
     async function loadData() {
@@ -141,7 +144,7 @@ export default function CommercialPage() {
           <label className="flex items-center gap-2 bg-antko-primary text-white px-4 py-2 rounded-lg cursor-pointer hover:bg-antko-primary/90 transition-colors">
             <Upload className="w-4 h-4" />
             <span>{isUploading ? 'Procesando IA...' : 'Subir NV (PDF)'}</span>
-            <input type="file" accept=".pdf" className="hidden" onChange={handleUpload} disabled={isUploading} />
+            <input type="file" accept=".pdf" className="hidden" onChange={handleUpload} disabled={isUploading || isViewOnly} />
           </label>
         </div>
       </div>
@@ -257,7 +260,12 @@ export default function CommercialPage() {
               </button>
               <button 
                 onClick={handleSave}
-                className="px-6 py-2 rounded-lg font-medium bg-antko-primary text-white hover:bg-antko-primary/90 transition-colors"
+                disabled={isViewOnly}
+                className={`px-6 py-2 rounded-lg font-medium transition-colors ${
+                  isViewOnly 
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                    : 'bg-antko-primary text-white hover:bg-antko-primary/90'
+                }`}
               >
                 Cargar
               </button>

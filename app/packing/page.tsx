@@ -5,11 +5,14 @@ import { NVCard, NVData } from '@/components/ui/nv-card';
 import { Box, UserCheck, PlusCircle, X } from 'lucide-react';
 import { LabelPrinter, LabelData } from '@/components/ui/label-printer';
 import { fetchPackingNVs, createPackageRecord, sendNVToSupervisorPacking } from '@/lib/api';
+import { useAuth } from '@/components/auth-provider';
 
 export default function PackingPage() {
   const [nvs, setNvs] = useState<NVData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [assignedNvId, setAssignedNvId] = useState<string | null>(null);
+  const { profile } = useAuth();
+  const isViewOnly = profile?.role === 'admin';
   const [labelToPrint, setLabelToPrint] = useState<LabelData | null>(null);
   const [showRouteModal, setShowRouteModal] = useState<string | null>(null);
   const [routeInput, setRouteInput] = useState('');
@@ -140,7 +143,12 @@ export default function PackingPage() {
               {assignedNvId !== nv.id ? (
                 <button 
                   onClick={() => assignToMe(nv.id)}
-                  className="flex items-center gap-2 bg-antko-dark text-white px-4 py-2 rounded-lg hover:bg-antko-darker transition-colors text-sm font-medium"
+                  disabled={isViewOnly}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors text-sm font-medium ${
+                    isViewOnly 
+                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                      : 'bg-antko-dark text-white hover:bg-antko-darker'
+                  }`}
                 >
                   <UserCheck className="w-4 h-4" />
                   Asignarme
@@ -185,21 +193,26 @@ export default function PackingPage() {
                                 min={1}
                                 className="w-20 border border-gray-300 rounded-md px-3 py-1.5 text-center font-medium"
                               />
-                              <button 
-                                onClick={() => {
-                                  const input = document.getElementById(`qty-${item.id}`) as HTMLInputElement;
-                                  const qty = parseInt(input.value, 10);
-                                  if (qty > 0 && qty <= remainingToPack) {
-                                    createPackage(nv, item, qty);
-                                  } else {
-                                    alert('Cantidad inválida');
-                                  }
-                                }}
-                                className="flex items-center gap-1 bg-antko-primary text-white px-4 py-2 rounded-md hover:bg-antko-primary/90 text-sm font-medium transition-colors"
-                              >
-                                <PlusCircle className="w-4 h-4" />
-                                Crear Bulto
-                              </button>
+                                <button 
+                                  onClick={() => {
+                                    const input = document.getElementById(`qty-${item.id}`) as HTMLInputElement;
+                                    const qty = parseInt(input.value, 10);
+                                    if (qty > 0 && qty <= remainingToPack) {
+                                      createPackage(nv, item, qty);
+                                    } else {
+                                      alert('Cantidad inválida');
+                                    }
+                                  }}
+                                  disabled={isViewOnly}
+                                  className={`flex items-center gap-1 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                                    isViewOnly 
+                                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                                      : 'bg-antko-primary text-white hover:bg-antko-primary/90'
+                                  }`}
+                                >
+                                  <PlusCircle className="w-4 h-4" />
+                                  Crear Bulto
+                                </button>
                             </div>
                           </div>
                         </div>

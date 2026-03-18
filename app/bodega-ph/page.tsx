@@ -7,6 +7,7 @@ import { Package, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
 
 export default function BodegaPHPage() {
   const { profile } = useAuth();
+  const isViewOnly = profile?.role === 'admin';
   const [items, setItems] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -126,8 +127,12 @@ export default function BodegaPHPage() {
                       
                       <button
                         onClick={() => handlePreparacionLista(item.id)}
-                        disabled={processingId === item.id}
-                        className="w-full bg-antko-secondary hover:bg-antko-secondary/90 text-white font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                        disabled={processingId === item.id || isViewOnly}
+                        className={`w-full font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 ${
+                          isViewOnly 
+                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                            : 'bg-antko-secondary hover:bg-antko-secondary/90 text-white'
+                        }`}
                       >
                         {processingId === item.id ? (
                           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>

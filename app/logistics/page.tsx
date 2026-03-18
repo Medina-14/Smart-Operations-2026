@@ -4,10 +4,13 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { Truck, Map, User, FileText, Camera, RefreshCw, CheckCircle2, Plus, ChevronDown, ChevronRight, Trash2 } from 'lucide-react';
 import Webcam from 'react-webcam';
 import { fetchStandbyItems, updateStandbyItemStatus, fetchVehicles, VehicleData, fetchDrivers, DriverData, createRoute } from '@/lib/api';
+import { useAuth } from '@/components/auth-provider';
 
 export default function LogisticsPage() {
   const [activeTab, setActiveTab] = useState<'hall' | 'preliminary' | 'definitive'>('hall');
   const [isLoading, setIsLoading] = useState(true);
+  const { profile } = useAuth();
+  const isViewOnly = profile?.role === 'admin';
   const [vehicles, setVehicles] = useState<VehicleData[]>([]);
   const [drivers, setDrivers] = useState<DriverData[]>([]);
   
@@ -291,8 +294,12 @@ export default function LogisticsPage() {
                 </button>
                 <button 
                   onClick={addToPreliminary}
-                  disabled={!availableItems.some(i => i.selected)}
-                  className="bg-antko-primary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-antko-primary/90 disabled:opacity-50 transition-colors"
+                  disabled={!availableItems.some(i => i.selected) || isViewOnly}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    availableItems.some(i => i.selected) && !isViewOnly
+                      ? 'bg-antko-primary text-white hover:bg-antko-primary/90' 
+                      : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                  }`}
                 >
                   Agregar a Ruta Preliminar
                 </button>
@@ -360,7 +367,12 @@ export default function LogisticsPage() {
                     <h3 className="text-lg font-bold text-antko-dark">{route.title}</h3>
                     <button 
                       onClick={() => createDefinitiveRoute(route.id)}
-                      className="bg-antko-secondary text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-antko-secondary/90 transition-colors"
+                      disabled={isViewOnly}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                        isViewOnly 
+                          ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                          : 'bg-antko-secondary text-white hover:bg-antko-secondary/90'
+                      }`}
                     >
                       Crear Ruta Definitiva
                     </button>

@@ -4,6 +4,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import Webcam from 'react-webcam';
 import { NVCard, NVData } from '@/components/ui/nv-card';
 import { fetchNVs, updateNVStatus, updateNVItem, fetchStandbyItems, createStandbyItem, updateStandbyItemStatus, StandbyItemData, fetchPickers, assignNvToPicker, logPickerCorrection, PickerData } from '@/lib/api';
+import { useAuth } from '@/components/auth-provider';
 import { Users, AlertTriangle, ShoppingCart, Archive, Clock, Camera, Check, X, Image as ImageIcon, CheckCircle2 } from 'lucide-react';
 
 type TabType = 'asignacion' | 'revision' | 'standby';
@@ -11,6 +12,8 @@ type TabType = 'asignacion' | 'revision' | 'standby';
 export default function SupervisorPickingPage() {
   const [activeTab, setActiveTab] = useState<TabType>('asignacion');
   const [nvs, setNvs] = useState<NVData[]>([]);
+  const { profile } = useAuth();
+  const isViewOnly = profile?.role === 'admin';
   const [standbyItems, setStandbyItems] = useState<StandbyItemData[]>([]);
   const [pickers, setPickers] = useState<PickerData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -245,8 +248,12 @@ export default function SupervisorPickingPage() {
                       </select>
                       <button 
                         onClick={() => assignPicker(nv.id)}
-                        disabled={!selectedPicker[nv.id]}
-                        className="flex items-center gap-2 bg-antko-secondary text-white px-4 py-2 rounded-lg hover:bg-antko-secondary/90 transition-colors text-sm font-medium disabled:opacity-50"
+                        disabled={!selectedPicker[nv.id] || isViewOnly}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors text-sm font-medium ${
+                          isViewOnly 
+                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                            : 'bg-antko-secondary text-white hover:bg-antko-secondary/90'
+                        }`}
                       >
                         <Users className="w-4 h-4" />
                         Asignar

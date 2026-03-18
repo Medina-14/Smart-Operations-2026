@@ -19,7 +19,7 @@ DROP TABLE IF EXISTS profiles CASCADE;
 -- 2. CREATE TABLES
 
 -- Profiles (Manejo de Roles y Accesos)
-CREATE TABLE IF NOT EXISTS profiles (
+CREATE TABLE IF NOT EXISTS public.profiles (
   id UUID REFERENCES auth.users ON DELETE CASCADE PRIMARY KEY,
   role TEXT NOT NULL CHECK (role IN ('admin_general', 'admin', 'comercial', 'bodega', 'bodega_ph', 'despacho', 'compras', 'apoyo_compras', 'picker', 'supervisor_picking', 'packing', 'supervisor_packing', 'chofer', 'logistica', 'reportes')),
   full_name TEXT NOT NULL,
@@ -27,8 +27,21 @@ CREATE TABLE IF NOT EXISTS profiles (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
+-- Habilitar RLS (Seguridad de Fila)
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+
+-- Políticas de Seguridad para Perfiles
+DROP POLICY IF EXISTS "Public profiles are viewable by everyone." ON public.profiles;
+CREATE POLICY "Public profiles are viewable by everyone." ON public.profiles FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Users can update own profile." ON public.profiles;
+CREATE POLICY "Users can update own profile." ON public.profiles FOR UPDATE USING (auth.uid() = id);
+
+DROP POLICY IF EXISTS "Users can insert own profile." ON public.profiles;
+CREATE POLICY "Users can insert own profile." ON public.profiles FOR INSERT WITH CHECK (auth.uid() = id);
+
 -- Notas de Venta (NV)
-CREATE TABLE IF NOT EXISTS nvs (
+CREATE TABLE IF NOT EXISTS public.nvs (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   nv_number TEXT UNIQUE NOT NULL,
   client_name TEXT NOT NULL,

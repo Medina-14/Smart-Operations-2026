@@ -30,15 +30,21 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 -- Habilitar RLS (Seguridad de Fila)
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
--- Políticas de Seguridad para Perfiles
-DROP POLICY IF EXISTS "Public profiles are viewable by everyone." ON public.profiles;
-CREATE POLICY "Public profiles are viewable by everyone." ON public.profiles FOR SELECT USING (true);
+-- ELIMINAR TODAS LAS POLÍTICAS EXISTENTES PARA EVITAR RECURSIÓN
+DO $$ 
+DECLARE 
+    pol record;
+BEGIN 
+    FOR pol IN SELECT policyname FROM pg_policies WHERE schemaname = 'public' AND tablename = 'profiles'
+    LOOP
+        EXECUTE format('DROP POLICY %I ON public.profiles', pol.policyname);
+    END LOOP;
+END $$;
 
-DROP POLICY IF EXISTS "Users can update own profile." ON public.profiles;
-CREATE POLICY "Users can update own profile." ON public.profiles FOR UPDATE USING (auth.uid() = id);
-
-DROP POLICY IF EXISTS "Users can insert own profile." ON public.profiles;
-CREATE POLICY "Users can insert own profile." ON public.profiles FOR INSERT WITH CHECK (auth.uid() = id);
+-- CREAR POLÍTICAS SEGURAS (SIN RECURSIÓN)
+CREATE POLICY "Permitir lectura para autenticados" ON public.profiles FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Permitir inserción de perfil propio" ON public.profiles FOR INSERT TO authenticated WITH CHECK (auth.uid() = id);
+CREATE POLICY "Permitir actualización de perfil propio" ON public.profiles FOR UPDATE TO authenticated USING (auth.uid() = id);
 
 -- Notas de Venta (NV)
 CREATE TABLE IF NOT EXISTS public.nvs (

@@ -85,37 +85,35 @@ export async function POST(req: Request) {
     const genAI = new GoogleGenerativeAI(apiKey);
     console.log('Using AI_MODEL:', AI_MODEL, 'with API v1');
     
-    // Explicitly use v1 instead of v1beta which seems to be giving 404 for this key
+    // Explicitly use v1 instead of v1beta
     const model = genAI.getGenerativeModel({ model: AI_MODEL }, { apiVersion: 'v1' });
 
-    const result = await model.generateContent({
-      contents: [
-        {
-          role: 'user',
-          parts: [
-            { text: promptText },
-            {
-              inlineData: {
-                mimeType: mimeType,
-                data: imageBase64.split(',')[1] || imageBase64,
-              },
-            },
-          ],
+    const result = await model.generateContent([
+      promptText,
+      {
+        inlineData: {
+          mimeType: mimeType,
+          data: imageBase64.split(',')[1] || imageBase64,
         },
-      ],
-      generationConfig: {
-        responseMimeType: 'application/json',
       },
-    });
+    ]);
 
     const response = await result.response;
-    const text = response.text();
+    let text = response.text();
+    
+    // Clean markdown backticks if present
+    text = text.replace(/```json|```/g, '').trim();
     
     if (!text) {
       throw new Error('No text returned from Gemini');
     }
 
-    return NextResponse.json(JSON.parse(text));
+    try {
+      return NextResponse.json(JSON.parse(text));
+    } catch (parseError) {
+      console.error('Failed to parse Gemini response as JSON. Raw text:', text);
+      throw new Error('Invalid JSON format in AI response');
+    }
   } catch (error: any) {
     console.error('Gemini API Error details:', error);
     

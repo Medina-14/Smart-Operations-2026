@@ -1,1 +1,1 @@
-export const AI_MODEL = "gemini-1.5-flash-latest"; 
+export const AI_MODEL = "gemini-1.5-pro"; 

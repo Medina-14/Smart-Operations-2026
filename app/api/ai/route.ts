@@ -83,6 +83,9 @@ export async function POST(req: Request) {
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
+    console.log('Using AI_MODEL:', AI_MODEL);
+    
+    // Attempt to list models to see what's available if it fails
     const model = genAI.getGenerativeModel({ model: AI_MODEL });
 
     const result = await model.generateContent({
@@ -115,6 +118,13 @@ export async function POST(req: Request) {
     return NextResponse.json(JSON.parse(text));
   } catch (error: any) {
     console.error('Gemini API Error details:', error);
+    
+    // Debug: Try to list models if 404
+    if (error.status === 404 || error.message?.includes('Not Found')) {
+      console.warn('Model 404. Please check if the model name is correct for your region/key.');
+      console.log('Common models include: gemini-1.5-flash, gemini-1.5-flash-8b, gemini-1.5-pro');
+    }
+
     const errorMessage = error.message || 'Failed to process document';
     return NextResponse.json({ error: errorMessage }, { status: 500 });
   }

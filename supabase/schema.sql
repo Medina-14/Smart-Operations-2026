@@ -181,7 +181,6 @@ INSERT INTO vehicles (plate, brand, current_mileage, next_maintenance_mileage) V
   ('RZLH-53', 'Mahindra', 65000, 70000),
   ('SLTC-12', 'Hyundai', 32000, 40000),
   ('RTYP-78', 'Volvo', 180000, 190000),
-  ('CHEV-01', 'Chevrolet', 5000, 10000),
   ('VSDW-97', 'Chevrolet', 0, 10000),
   ('BBHY-58', 'Chevrolet', 0, 10000),
   ('TTZH-93', 'Mahindra', 0, 10000)

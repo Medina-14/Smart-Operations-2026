@@ -723,7 +723,29 @@ export async function createRoute(driverId: string, vehicleId: string, nvIds: st
 
   return routeData.id;
 }
+// --- MANTENCIONES ---
+export async function addMaintenanceLog(logData: { vehicle_id: string, date: string, mileage: number, description: string, invoice_url?: string }) {
+  const { error } = await supabase.from('maintenance_logs').insert([logData]);
+  return !error;
+}
 
+export async function fetchMaintenanceLogs(vehicleId: string) {
+  const { data, error } = await supabase
+    .from('maintenance_logs')
+    .select('*')
+    .eq('vehicle_id', vehicleId)
+    .order('date', { ascending: false });
+  return data || [];
+}
+
+// --- BODEGA PH (Tipo Bulto) ---
+export async function updateStandbyItemType(id: string, tipoBulto: string) {
+  const { error } = await supabase
+    .from('standby_items')
+    .update({ tipo_bulto: tipoBulto })
+    .eq('id', id);
+  return !error;
+}
 export async function fetchDriverRoute(driverId: string): Promise<any | null> {
   // Fetch the active route for the driver
   const { data: routeData, error: routeError } = await supabase
